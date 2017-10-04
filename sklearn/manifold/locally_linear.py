@@ -186,7 +186,7 @@ def null_space(M, k, k_skip=1, eigen_solver='arpack', tol=1E-6, max_iter=100,
 def locally_linear_embedding(
         X, n_neighbors, n_components, reg=1e-3, eigen_solver='auto', tol=1e-6,
         max_iter=100, method='standard', hessian_tol=1E-4, modified_tol=1E-12,
-        random_state=None, n_jobs=1):
+        random_state=None, n_jobs=1, neighbors_metric=’minkowski’):
     """Perform a Locally Linear Embedding analysis on the data.
 
     Read more in the :ref:`User Guide <locally_linear_embedding>`.
@@ -288,7 +288,8 @@ def locally_linear_embedding(
     if method not in ('standard', 'hessian', 'modified', 'ltsa'):
         raise ValueError("unrecognized method '%s'" % method)
 
-    nbrs = NearestNeighbors(n_neighbors=n_neighbors + 1, n_jobs=n_jobs)
+    nbrs = NearestNeighbors(n_neighbors=n_neighbors + 1, n_jobs=n_jobs,
+                           metric=neighbors_metric)
     nbrs.fit(X)
     X = nbrs._fit_X
 
@@ -618,7 +619,8 @@ class LocallyLinearEmbedding(BaseEstimator, TransformerMixin):
     def __init__(self, n_neighbors=5, n_components=2, reg=1E-3,
                  eigen_solver='auto', tol=1E-6, max_iter=100,
                  method='standard', hessian_tol=1E-4, modified_tol=1E-12,
-                 neighbors_algorithm='auto', random_state=None, n_jobs=1):
+                 neighbors_algorithm='auto', random_state=None, n_jobs=1,
+                 neighbors_metric='minowski'):
         self.n_neighbors = n_neighbors
         self.n_components = n_components
         self.reg = reg
@@ -631,11 +633,13 @@ class LocallyLinearEmbedding(BaseEstimator, TransformerMixin):
         self.random_state = random_state
         self.neighbors_algorithm = neighbors_algorithm
         self.n_jobs = n_jobs
+        self.neighbors_metric = neighbors_metric
 
     def _fit_transform(self, X):
         self.nbrs_ = NearestNeighbors(self.n_neighbors,
                                       algorithm=self.neighbors_algorithm,
-                                      n_jobs=self.n_jobs)
+                                      n_jobs=self.n_jobs,
+                                      metric=self.neighbors_metric)
 
         random_state = check_random_state(self.random_state)
         X = check_array(X, dtype=float)
@@ -646,7 +650,8 @@ class LocallyLinearEmbedding(BaseEstimator, TransformerMixin):
                 eigen_solver=self.eigen_solver, tol=self.tol,
                 max_iter=self.max_iter, method=self.method,
                 hessian_tol=self.hessian_tol, modified_tol=self.modified_tol,
-                random_state=random_state, reg=self.reg, n_jobs=self.n_jobs)
+                random_state=random_state, reg=self.reg, n_jobs=self.n_jobs,
+                neighbors_metric=self.neighbors_metric)
 
     def fit(self, X, y=None):
         """Compute the embedding vectors for data X
